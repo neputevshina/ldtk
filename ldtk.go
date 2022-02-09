@@ -1,3 +1,28 @@
+// Package ldtk implements LDTk's (https://ldtk.io/json) JSON schema in user-friendly format.
+//
+// Usage:
+//	package main
+//
+//	import (
+//		"json"
+//		_ `embed`
+//
+//		"github.com/neputevshina/ldtk"
+//	)
+//
+//	//go:embed ./levels.ldtk
+//	var _project []byte
+//
+//	var Project ldtk.Project
+//
+//	func init() {
+//		json.Unmarshal(_project, &Project)
+//	}
+//
+//	func main() {
+//		// your game
+//	}
+//
 package ldtk
 
 import (
