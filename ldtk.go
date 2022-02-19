@@ -44,7 +44,7 @@ type Project struct {
 	Enums           []interface{} // TODO: implement when it's time to
 	ExternalEnums   []interface{} // and this
 	LevelFields     []interface{} // this one too
-	Levels          []Level
+	Levels          map[int]Level
 }
 
 func (p *Project) UnmarshalJSON(data []byte) error {
@@ -87,7 +87,11 @@ func (p *Project) UnmarshalJSON(data []byte) error {
 	p.WorldGridHeight = project.WorldGridHeight
 	p.BgColor = hex(project.BgColor)
 	p.ExternalLevels = project.ExternalLevels
-	p.Levels = project.Levels
+
+	p.Levels = make(map[int]Level, len(project.Levels))
+	for _, v := range project.Levels {
+		p.Levels[v.UID] = v
+	}
 
 	return nil
 }
