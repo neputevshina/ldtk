@@ -38,9 +38,9 @@ type Project struct {
 	WorldGridHeight int
 	BgColor         color.RGBA
 	ExternalLevels  bool
-	Layers          []LayerDef
-	Entities        map[string]EntityDef
-	Tilesets        []TilesetDef
+	LayerDefs       []LayerDef
+	EntityDefs      map[string]EntityDef
+	TilesetDefs     []TilesetDef
 	Enums           []interface{} // TODO: implement when it's time to
 	ExternalEnums   []interface{} // and this
 	LevelFields     []interface{} // this one too
@@ -71,13 +71,13 @@ func (p *Project) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	p.Entities = make(map[string]EntityDef, len(project.Defs.Entities))
+	p.EntityDefs = make(map[string]EntityDef, len(project.Defs.Entities))
 	for _, v := range project.Defs.Entities {
-		p.Entities[v.Identifier] = v
+		p.EntityDefs[v.Identifier] = v
 	}
 
-	p.Layers = project.Defs.Layers
-	p.Tilesets = project.Defs.Tilesets
+	p.LayerDefs = project.Defs.Layers
+	p.TilesetDefs = project.Defs.Tilesets
 	p.Enums = project.Defs.Enums
 	p.ExternalEnums = project.Defs.ExternalEnums
 	p.LevelFields = project.Defs.LevelFields
@@ -188,26 +188,85 @@ type LayerInstance struct {
 	AutoLayerTiles     []interface{} `json:"autoLayerTiles"`
 	OverrideTilesetUID int           `json:"overrideTilesetUid"`
 	GridTiles          []Tile        `json:"gridTiles"`
-	EntityInstances    []interface{} `json:"entityInstances"`
+	Entities           []interface{} `json:"entityInstances"`
 }
 
 type Level struct {
-	Identifier      string          `json:"identifier"`
-	UID             int             `json:"uid"`
-	WorldX          int             `json:"worldX"`
-	WorldY          int             `json:"worldY"`
-	PxWid           int             `json:"pxWid"`
-	PxHei           int             `json:"pxHei"`
-	BgColor         string          `json:"__bgColor"`
-	BgPos           interface{}     `json:"__bgPos"`
-	BgRelPath       *string         `json:"bgRelPath"`       // don't
-	ExternalRelPath *string         `json:"externalRelPath"` // don't
-	FieldInstances  []interface{}   `json:"fieldInstances"`  // TODO
-	LayerInstances  []LayerInstance `json:"layerInstances"`
+	Identifier      string
+	UID             int
+	WorldX          int
+	WorldY          int
+	PxWid           int
+	PxHei           int
+	BgColor         string
+	BgPos           interface{}
+	BgRelPath       *string
+	ExternalRelPath *string
+	Fields          map[string]interface{}
+	Layers          []LayerInstance
 	Neighbours      []struct {
-		UID       int    `json:"levelUid"`
-		Direction string `json:"dir"`
-	} `json:"__neighbours"`
+		UID       int
+		Direction rune
+	}
+}
+
+func (p *Level) UnmarshalJSON(data []byte) error {
+	var level struct {
+		Identifier      string      `json:"identifier"`
+		UID             int         `json:"uid"`
+		WorldX          int         `json:"worldX"`
+		WorldY          int         `json:"worldY"`
+		PxWid           int         `json:"pxWid"`
+		PxHei           int         `json:"pxHei"`
+		BgColor         string      `json:"__bgColor"`
+		BgPos           interface{} `json:"__bgPos"`
+		BgRelPath       *string     `json:"bgRelPath"`       // don't
+		ExternalRelPath *string     `json:"externalRelPath"` // don't
+		Fields          []struct {
+			Identifier string      `json:"__identifier"`
+			Value      interface{} `json:"__value"`
+			// Type       string      `json:"__type"`
+		} `json:"fieldInstances"` // TODO
+		Layers     []LayerInstance `json:"layerInstances"`
+		Neighbours []struct {
+			UID       int    `json:"levelUid"`
+			Direction string `json:"dir"`
+		} `json:"__neighbours"`
+	}
+
+	err := json.Unmarshal(data, &level)
+	if err != nil {
+		return err
+	}
+
+	p.Identifier = level.Identifier
+	p.UID = level.UID
+	p.WorldX = level.WorldX
+	p.WorldY = level.WorldY
+	p.PxWid = level.PxWid
+	p.PxHei = level.PxHei
+	p.BgColor = level.BgColor
+	p.BgPos = level.BgPos
+	p.BgRelPath = level.BgRelPath
+	p.ExternalRelPath = level.ExternalRelPath
+	p.Layers = level.Layers
+
+	p.Fields = make(map[string]interface{}, len(level.Fields))
+	for _, f := range level.Fields {
+		p.Fields[f.Identifier] = f.Value
+	}
+
+	for _, f := range level.Neighbours {
+		p.Neighbours = append(p.Neighbours, struct {
+			UID       int
+			Direction rune
+		}{
+			UID:       f.UID,
+			Direction: rune(f.Direction[0]),
+		})
+	}
+
+	return nil
 }
 
 func hex(s string) color.RGBA {

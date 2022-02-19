@@ -38,7 +38,7 @@ func TestEntityMapping(t *testing.T) {
 		}
 		obj := v.(object)
 		k := obj["identifier"].(string)
-		ent := proj1.Entities[k]
+		ent := proj1.EntityDefs[k]
 
 		assert(ent.Color == obj["color"].(string))
 		assert(ent.Identifier == obj["identifier"].(string))
